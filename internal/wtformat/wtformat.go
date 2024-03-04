@@ -15,6 +15,44 @@ type FieldPacker interface {
 	UnpackField(buf []byte, data any) ([]byte, error)
 }
 
+type fieldPackerFixedSizeString struct {
+	size int
+}
+
+func (p fieldPackerFixedSizeString) PackField(data any, buf []byte) ([]byte, error) {
+	v, ok := data.(string)
+	if !ok {
+		return nil, fmt.Errorf("expected string, got %T", data)
+	}
+
+	switch {
+	case p.size == len(v):
+		buf = append(buf, v...)
+	case p.size > len(v):
+		n := p.size - len(v)
+		buf = append(buf, v...)
+
+		for i := 0; i < n; i++ {
+			buf = append(buf, byte(0))
+		}
+	case p.size < len(v):
+		buf = append(buf, v[:p.size]...)
+	}
+
+	return buf, nil
+}
+func (p fieldPackerFixedSizeString) UnpackField(buf []byte, data any) ([]byte, error) {
+	v, ok := data.(*string)
+	if ok == false {
+		return nil, fmt.Errorf("expected string pointer, got %T", data)
+	}
+
+	*v = string(buf[:p.size])
+	buf = buf[p.size:]
+
+	return buf, nil
+}
+
 type fieldPackerNullTerminatedString struct {
 	size int
 }
@@ -48,7 +86,7 @@ func (p fieldPackerNullTerminatedString) UnpackField(buf []byte, data any) ([]by
 func (p fieldPackerNullTerminatedString) PackField(data any, buf []byte) ([]byte, error) {
 	v, ok := data.(string)
 	if !ok {
-		return nil, fmt.Errorf("not a string")
+		return nil, fmt.Errorf("expected string, got %T", data)
 	}
 
 	if p.size > 0 {
@@ -103,6 +141,13 @@ func ParseFormat(format string) ([]FieldPacker, error) {
 		switch char {
 		case 'S':
 			packers = append(packers, fieldPackerNullTerminatedString{size: size})
+		case 's':
+			s := size
+			if s == 0 {
+				s = 1
+			}
+
+			packers = append(packers, fieldPackerFixedSizeString{size: s})
 		default:
 			return nil, fmt.Errorf("'%s' is not a supported format directive", string(char))
 		}
