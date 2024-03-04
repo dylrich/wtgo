@@ -1,0 +1,22 @@
+wtgo
+--------
+
+This repository contains work-in-progress Go bindings for the WiredTiger
+storage engine. This software is barely functional and likely has serious bugs.
+Use at your own risk.
+
+Requirements
+--------
+These bindings require WiredTiger 11.2.0+ installed locally to build. It's
+tracking the WiredTiger development branch, so the API will not remain stable.
+Eventually there may be a versioning system that tracks WiredTiger stable
+releases.
+
+Usage
+--------
+Check wtgo_test.go for example usage 
+
+Motivation
+--------
+All existing bindings were quite old or out-of-date. WiredTiger has a neat API
+and I wanted to try it out as an embedded database for fun.
