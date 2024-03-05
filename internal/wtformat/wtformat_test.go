@@ -243,7 +243,7 @@ func TestParseFormat(t *testing.T) {
 			}
 
 			if diff := cmp.Diff(tc.output, tc.vars); diff != "" {
-				t.Fatalf("unpacking doesn't match (-want +got):\n%s", diff)
+				t.Fatalf("output doesn't match (-want +got):\n%s", diff)
 			}
 		})
 	}
