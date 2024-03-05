@@ -66,6 +66,9 @@ func (p fieldPackerNullTerminatedString) UnpackField(buf []byte, data any) ([]by
 	if p.size > 0 {
 		*v = string(buf[:p.size])
 		buf = buf[p.size:]
+		if len(buf) > 0 && buf[0] == 0 {
+			buf = buf[1:]
+		}
 	} else {
 		n := bytes.IndexByte(buf, 0)
 		switch {
@@ -99,7 +102,7 @@ func (p fieldPackerNullTerminatedString) PackField(data any, buf []byte) ([]byte
 				buf = append(buf, byte(0))
 			}
 		default:
-			n := strings.IndexByte(v, 0)
+			n := strings.LastIndexByte(v, 0)
 			if n == -1 {
 				buf = append(buf, v...)
 				buf = append(buf, byte(0))
@@ -108,7 +111,7 @@ func (p fieldPackerNullTerminatedString) PackField(data any, buf []byte) ([]byte
 			}
 		}
 	} else {
-		n := strings.IndexByte(v, 0)
+		n := strings.LastIndexByte(v, 0)
 		if n == -1 {
 			buf = append(buf, v...)
 			buf = append(buf, byte(0))
