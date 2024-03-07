@@ -8,7 +8,7 @@ package wtgo
 
 #define WT_SIZE_ZERO (size_t)((size_t)(SIZE_MAX) >> 1)
 
-int wiredtiger_connection_open_session(WT_CONNECTION *connection, WT_EVENT_HANDLER *event_handler,	const char *config, WT_SESSION **sessionp) {
+int wiredtiger_connection_open_session(WT_CONNECTION *connection, WT_EVENT_HANDLER *event_handler, const char *config, WT_SESSION **sessionp) {
 	return connection->open_session(connection, event_handler, config, sessionp);
 }
 
@@ -65,10 +65,20 @@ int wiredtiger_cursor_next(WT_CURSOR *cursor) {
 int wiredtiger_cursor_prev(WT_CURSOR *cursor) {
 	return cursor->prev(cursor);
 }
+
+int wiredtiger_cursor_search(WT_CURSOR *cursor, const void *packed_key, size_t key_size) {
+	WT_ITEM key;
+	key.data = packed_key;
+	key.size = key_size;
+	cursor->set_key(cursor, &key);
+
+	return cursor->search(cursor);
+}
 */
 import (
 	"C"
 )
+
 import (
 	"fmt"
 	"unsafe"
@@ -333,6 +343,17 @@ func (c *Cursor) GetValue(values ...any) error {
 		}
 
 		data = d
+	}
+
+	return nil
+}
+
+func (c *Cursor) Search() error {
+	packedkey := unsafe.Pointer(&c.keybuf[0])
+	size := C.size_t(len(c.keybuf))
+
+	if code := int(C.wiredtiger_cursor_search(c.wtcursor, packedkey, size)); code != 0 {
+		return ErrorCode(code)
 	}
 
 	return nil
