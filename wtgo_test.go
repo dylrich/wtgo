@@ -210,3 +210,110 @@ func TestSearch(t *testing.T) {
 		t.Fatalf("search for missing key returned err '%s', expected not found", err)
 	}
 }
+
+func insert[K, V any](cursor *wtgo.Cursor, k K, v V) error {
+	if err := cursor.Reset(); err != nil {
+		return fmt.Errorf("reset: %w", err)
+	}
+
+	if err := cursor.SetKey(k); err != nil {
+		return fmt.Errorf("set key: %s", err)
+	}
+
+	if err := cursor.SetValue(v); err != nil {
+		return fmt.Errorf("set value: %s", err)
+	}
+
+	if err := cursor.Insert(); err != nil {
+		return fmt.Errorf("insert: %w", err)
+	}
+
+	return nil
+}
+
+type result[K, V any] struct {
+	key   K
+	value V
+}
+
+func searchKey[K, V any](cursor *wtgo.Cursor, key K) (*result[K, V], error) {
+	if err := cursor.Reset(); err != nil {
+		return nil, fmt.Errorf("reset: %w", err)
+	}
+
+	if err := cursor.SetKey(key); err != nil {
+		return nil, fmt.Errorf("set key: %w", err)
+	}
+
+	if err := cursor.Search(); err != nil {
+		return nil, fmt.Errorf("search: %w", err)
+	}
+
+	var k K
+
+	if err := cursor.GetKey(&k); err != nil {
+		return nil, fmt.Errorf("get key: %w", err)
+	}
+
+	var v V
+
+	if err := cursor.GetValue(&v); err != nil {
+		return nil, fmt.Errorf("get value: %w", err)
+	}
+
+	r := &result[K, V]{
+		key:   k,
+		value: v,
+	}
+
+	return r, nil
+}
+
+func TestTransactions(t *testing.T) {
+	tablename := "table:test-table"
+	tableconf := "key_format=S,value_format=S"
+
+	env, err := newTableCursorTestEnv("create", "", tablename, tableconf, "")
+	if err != nil {
+		t.Fatalf("new table cursor test env: %s", err)
+	}
+
+	t.Cleanup(func() { env.Close() })
+
+	if err := env.session.BeginTransaction(""); err != nil {
+		t.Fatalf("begin transaction: %s", err)
+	}
+
+	if err := insert(env.cursor, "a", "a"); err != nil {
+		t.Fatalf("insert after first begin: %s", err)
+	}
+
+	if err := env.session.RollbackTransaction(""); err != nil {
+		t.Fatalf("rollback transaction: %s", err)
+	}
+
+	if _, err := searchKey[string, string](env.cursor, "a"); !errors.Is(err, wtgo.ErrNotFound) {
+		t.Fatalf("search for missing key returned err '%s', expected not found", err)
+	}
+
+	if err := env.session.BeginTransaction("sync=true"); err != nil {
+		t.Fatalf("begin transaction: %s", err)
+	}
+
+	if err := insert(env.cursor, "b", "b"); err != nil {
+		t.Fatalf("insert after second begin: %s", err)
+	}
+
+	if err := env.session.CommitTransaction("sync=on"); err != nil {
+		t.Fatalf("commit transaction: %s", err)
+	}
+
+	if _, err := searchKey[string, string](env.cursor, "b"); err != nil {
+		t.Fatalf("search key after commit: %s", err)
+	}
+
+	if err := env.conn.Close(""); err != nil {
+		t.Fatalf("close connection: %s", err)
+	}
+
+}

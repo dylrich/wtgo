@@ -16,8 +16,28 @@ int wiredtiger_connection_close(WT_CONNECTION *connection, const char *config) {
 	return connection->close(connection, config);
 }
 
-int wiredtiger_session_create(WT_SESSION *session, const char *name, const char *config ) {
+int wiredtiger_session_create(WT_SESSION *session, const char *name, const char *config) {
 	return session->create(session, name, config);
+}
+
+int wiredtiger_session_reset(WT_SESSION *session) {
+	return session->reset(session);
+}
+
+int wiredtiger_session_checkpoint(WT_SESSION *session, const char *config) {
+	return session->checkpoint(session, config);
+}
+
+int wiredtiger_session_begin_transaction(WT_SESSION *session, const char *config) {
+	return session->begin_transaction(session, config);
+}
+
+int wiredtiger_session_commit_transaction(WT_SESSION *session, const char *config) {
+	return session->commit_transaction(session, config);
+}
+
+int wiredtiger_session_rollback_transaction(WT_SESSION *session, const char *config) {
+	return session->rollback_transaction(session, config);
 }
 
 int wiredtiger_session_open_cursor(WT_SESSION *session, const char *uri, WT_CURSOR *to_dup, const char *config, WT_CURSOR **cursorp) {
@@ -150,6 +170,51 @@ func (conn *Connection) Close(config string) error {
 	return nil
 }
 
+func (s *Session) BeginTransaction(config string) error {
+	var configcstr *C.char = nil
+
+	if len(config) > 0 {
+		configcstr = C.CString(config)
+		defer C.free(unsafe.Pointer(configcstr))
+	}
+
+	if code := int(C.wiredtiger_session_begin_transaction(s.wtsession, configcstr)); code != 0 {
+		return ErrorCode(code)
+	}
+
+	return nil
+}
+
+func (s *Session) CommitTransaction(config string) error {
+	var configcstr *C.char = nil
+
+	if len(config) > 0 {
+		configcstr = C.CString(config)
+		defer C.free(unsafe.Pointer(configcstr))
+	}
+
+	if code := int(C.wiredtiger_session_commit_transaction(s.wtsession, configcstr)); code != 0 {
+		return ErrorCode(code)
+	}
+
+	return nil
+}
+
+func (s *Session) RollbackTransaction(config string) error {
+	var configcstr *C.char = nil
+
+	if len(config) > 0 {
+		configcstr = C.CString(config)
+		defer C.free(unsafe.Pointer(configcstr))
+	}
+
+	if code := int(C.wiredtiger_session_rollback_transaction(s.wtsession, configcstr)); code != 0 {
+		return ErrorCode(code)
+	}
+
+	return nil
+}
+
 func (s *Session) Create(name, config string) error {
 	namecstr := C.CString(name)
 	configcstr := C.CString(config)
@@ -160,6 +225,25 @@ func (s *Session) Create(name, config string) error {
 	C.free(unsafe.Pointer(configcstr))
 
 	if code != 0 {
+		return ErrorCode(code)
+	}
+
+	return nil
+}
+
+func (s *Session) Checkpoint(config string) error {
+	configcstr := C.CString(config)
+	defer C.free(unsafe.Pointer(configcstr))
+
+	if code := int(C.wiredtiger_session_checkpoint(s.wtsession, configcstr)); code != 0 {
+		return ErrorCode(code)
+	}
+
+	return nil
+}
+
+func (s *Session) Reset() error {
+	if code := int(C.wiredtiger_session_reset(s.wtsession)); code != 0 {
 		return ErrorCode(code)
 	}
 
