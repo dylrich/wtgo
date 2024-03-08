@@ -51,6 +51,10 @@ int wiredtiger_session_open_cursor(WT_SESSION *session, const char *uri, WT_CURS
 	return 0;
 }
 
+int wiredtiger_cursor_close(WT_CURSOR *cursor) {
+	return cursor->close(cursor);
+}
+
 int wiredtiger_cursor_insert(WT_CURSOR *cursor, const void *packed_key, size_t key_size, const void *packed_value, size_t value_size) {
 
 	WT_ITEM key;
@@ -300,6 +304,14 @@ func (s *Session) OpenCursor(uri, config string) (*Cursor, error) {
 	}
 
 	return cursor, nil
+}
+
+func (c *Cursor) Close() error {
+	if code := int(C.wiredtiger_cursor_close(c.wtcursor)); code != 0 {
+		return ErrorCode(code)
+	}
+
+	return nil
 }
 
 func (c *Cursor) SetKey(keys ...any) error {
