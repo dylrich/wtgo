@@ -13,6 +13,56 @@ func strVarPtr() *string {
 	return &s
 }
 
+func uint8VarPtr() *uint8 {
+	var i uint8
+	return &i
+}
+
+func int8VarPtr() *int8 {
+	var i int8
+	return &i
+}
+
+func uint16VarPtr() *uint16 {
+	var i uint16
+	return &i
+}
+
+func int16VarPtr() *int16 {
+	var i int16
+	return &i
+}
+
+func uint32VarPtr() *uint32 {
+	var i uint32
+	return &i
+}
+
+func int32VarPtr() *int32 {
+	var i int32
+	return &i
+}
+
+func uint64VarPtr() *uint64 {
+	var i uint64
+	return &i
+}
+
+func int64VarPtr() *int64 {
+	var i int64
+	return &i
+}
+
+func byteVarPtr() *byte {
+	b := byte(0)
+	return &b
+}
+
+func byteSliceVarPtr() *[]byte {
+	b := make([]byte, 0)
+	return &b
+}
+
 func TestParseFormat(t *testing.T) {
 	cases := map[string]struct {
 		format string
@@ -104,6 +154,94 @@ func TestParseFormat(t *testing.T) {
 			output: []any{"hello\x00\x00"},
 			vars:   []any{strVarPtr()},
 		},
+		"parse-unsigned-int-8": {
+			format: "B",
+			input:  []any{uint8(42)},
+			err:    nil,
+			packed: []byte{170},
+			output: []any{uint8(42)},
+			vars:   []any{uint8VarPtr()},
+		},
+		"parse-signed-int-8": {
+			format: "b",
+			input:  []any{int8(42)},
+			err:    nil,
+			packed: []byte{170},
+			output: []any{int8(42)},
+			vars:   []any{int8VarPtr()},
+		},
+		"parse-unsigned-int-16": {
+			format: "H",
+			input:  []any{uint16(42)},
+			err:    nil,
+			packed: []byte{170},
+			output: []any{uint16(42)},
+			vars:   []any{uint16VarPtr()},
+		},
+		"parse-signed-int-16": {
+			format: "h",
+			input:  []any{int16(42)},
+			err:    nil,
+			packed: []byte{170},
+			output: []any{int16(42)},
+			vars:   []any{int16VarPtr()},
+		},
+		"parse-unsigned-int-32-I": {
+			format: "I",
+			input:  []any{uint32(42)},
+			err:    nil,
+			packed: []byte{170},
+			output: []any{uint32(42)},
+			vars:   []any{uint32VarPtr()},
+		},
+		"parse-signed-int-32-i": {
+			format: "i",
+			input:  []any{int32(42)},
+			err:    nil,
+			packed: []byte{170},
+			output: []any{int32(42)},
+			vars:   []any{int32VarPtr()},
+		},
+		"parse-unsigned-int-32-L": {
+			format: "L",
+			input:  []any{uint32(42)},
+			err:    nil,
+			packed: []byte{170},
+			output: []any{uint32(42)},
+			vars:   []any{uint32VarPtr()},
+		},
+		"parse-signed-int-32-l": {
+			format: "l",
+			input:  []any{int32(42)},
+			err:    nil,
+			packed: []byte{170},
+			output: []any{int32(42)},
+			vars:   []any{int32VarPtr()},
+		},
+		"parse-unsigned-int-64": {
+			format: "Q",
+			input:  []any{uint64(42)},
+			err:    nil,
+			packed: []byte{170},
+			output: []any{uint64(42)},
+			vars:   []any{uint64VarPtr()},
+		},
+		"parse-signed-int-64": {
+			format: "q",
+			input:  []any{int64(42)},
+			err:    nil,
+			packed: []byte{170},
+			output: []any{int64(42)},
+			vars:   []any{int64VarPtr()},
+		},
+		"parse-record": {
+			format: "r",
+			input:  []any{uint64(42)},
+			err:    nil,
+			packed: []byte{170},
+			output: []any{uint64(42)},
+			vars:   []any{uint64VarPtr()},
+		},
 		// tests prefixed "wt-" came directly from test_pack.py in the WiredTiger
 		// codebase and they should not be altered
 		"wt-1": {
@@ -194,6 +332,22 @@ func TestParseFormat(t *testing.T) {
 			packed: []byte("42"),
 			output: []any{"42"},
 			vars:   []any{strVarPtr()},
+		},
+		"wt-12": {
+			format: "iii",
+			input:  []any{int32(0), int32(101), int32(-99)},
+			err:    nil,
+			packed: []byte{0x80, 0xc0, 0x25, 0x3F, 0xdd},
+			output: []any{int32(0), int32(101), int32(-99)},
+			vars:   []any{int32VarPtr(), int32VarPtr(), int32VarPtr()},
+		},
+		"wt-13": {
+			format: "3i",
+			input:  []any{int32(0), int32(101), int32(-99)},
+			err:    nil,
+			packed: []byte{0x80, 0xc0, 0x25, 0x3F, 0xdd},
+			output: []any{int32(0), int32(101), int32(-99)},
+			vars:   []any{int32VarPtr(), int32VarPtr(), int32VarPtr()},
 		},
 	}
 

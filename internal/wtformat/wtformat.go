@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"fmt"
 	"strings"
+	"wtgo/internal/wtformat/internal/wtintpack"
 )
 
 type packer struct {
@@ -13,6 +14,223 @@ type packer struct {
 type FieldPacker interface {
 	PackField(data any, buf []byte) ([]byte, error)
 	UnpackField(buf []byte, data any) ([]byte, error)
+}
+
+
+type fieldPackerInt8 struct {
+}
+
+func (p fieldPackerInt8) PackField(data any, buf []byte) ([]byte, error) {
+	v, ok := data.(int8)
+	if !ok {
+		return nil, fmt.Errorf("expected int8, got %T", data)
+	}
+
+	buf = wtintpack.PackInt(buf, int64(v))
+
+	return buf, nil
+}
+
+func (p fieldPackerInt8) UnpackField(buf []byte, data any) ([]byte, error) {
+	v, ok := data.(*int8)
+	if ok == false {
+		return nil, fmt.Errorf("expected int8 pointer, got %T", data)
+	}
+
+	buf, x := wtintpack.UnpackInt(buf)
+
+	*v = int8(x)
+
+	return buf, nil
+}
+
+type fieldPackerUint8 struct {
+}
+
+func (p fieldPackerUint8) PackField(data any, buf []byte) ([]byte, error) {
+	v, ok := data.(uint8)
+	if !ok {
+		return nil, fmt.Errorf("expected uint8, got %T", data)
+	}
+
+	buf = wtintpack.PackUint(buf, uint64(v))
+
+	return buf, nil
+}
+
+func (p fieldPackerUint8) UnpackField(buf []byte, data any) ([]byte, error) {
+	v, ok := data.(*uint8)
+	if ok == false {
+		return nil, fmt.Errorf("expected uint8 pointer, got %T", data)
+	}
+
+	buf, x := wtintpack.UnpackUint(buf)
+
+	*v = uint8(x)
+
+	return buf, nil
+}
+
+type fieldPackerInt16 struct {
+}
+
+func (p fieldPackerInt16) PackField(data any, buf []byte) ([]byte, error) {
+	v, ok := data.(int16)
+	if !ok {
+		return nil, fmt.Errorf("expected int16, got %T", data)
+	}
+
+	buf = wtintpack.PackInt(buf, int64(v))
+
+	return buf, nil
+}
+
+func (p fieldPackerInt16) UnpackField(buf []byte, data any) ([]byte, error) {
+	v, ok := data.(*int16)
+	if ok == false {
+		return nil, fmt.Errorf("expected int16 pointer, got %T", data)
+	}
+
+	buf, x := wtintpack.UnpackInt(buf)
+
+	*v = int16(x)
+
+	return buf, nil
+}
+
+type fieldPackerUint16 struct {
+}
+
+func (p fieldPackerUint16) PackField(data any, buf []byte) ([]byte, error) {
+	v, ok := data.(uint16)
+	if !ok {
+		return nil, fmt.Errorf("expected uint16, got %T", data)
+	}
+
+	buf = wtintpack.PackUint(buf, uint64(v))
+
+	return buf, nil
+}
+
+func (p fieldPackerUint16) UnpackField(buf []byte, data any) ([]byte, error) {
+	v, ok := data.(*uint16)
+	if ok == false {
+		return nil, fmt.Errorf("expected uint16 pointer, got %T", data)
+	}
+
+	buf, x := wtintpack.UnpackUint(buf)
+
+	*v = uint16(x)
+
+	return buf, nil
+}
+
+type fieldPackerInt32 struct {
+}
+
+func (p fieldPackerInt32) PackField(data any, buf []byte) ([]byte, error) {
+	v, ok := data.(int32)
+	if !ok {
+		return nil, fmt.Errorf("expected int32, got %T", data)
+	}
+
+	buf = wtintpack.PackInt(buf, int64(v))
+
+	return buf, nil
+}
+
+func (p fieldPackerInt32) UnpackField(buf []byte, data any) ([]byte, error) {
+	v, ok := data.(*int32)
+	if ok == false {
+		return nil, fmt.Errorf("expected int32 pointer, got %T", data)
+	}
+
+	buf, x := wtintpack.UnpackInt(buf)
+
+	*v = int32(x)
+
+	return buf, nil
+}
+
+type fieldPackerUint32 struct {
+}
+
+func (p fieldPackerUint32) PackField(data any, buf []byte) ([]byte, error) {
+	v, ok := data.(uint32)
+	if !ok {
+		return nil, fmt.Errorf("expected uint32, got %T", data)
+	}
+
+	buf = wtintpack.PackUint(buf, uint64(v))
+
+	return buf, nil
+}
+
+func (p fieldPackerUint32) UnpackField(buf []byte, data any) ([]byte, error) {
+	v, ok := data.(*uint32)
+	if ok == false {
+		return nil, fmt.Errorf("expected uint32 pointer, got %T", data)
+	}
+
+	buf, x := wtintpack.UnpackUint(buf)
+
+	*v = uint32(x)
+
+	return buf, nil
+}
+
+type fieldPackerInt64 struct {
+}
+
+func (p fieldPackerInt64) PackField(data any, buf []byte) ([]byte, error) {
+	v, ok := data.(int64)
+	if !ok {
+		return nil, fmt.Errorf("expected int64, got %T", data)
+	}
+
+	buf = wtintpack.PackInt(buf, int64(v))
+
+	return buf, nil
+}
+
+func (p fieldPackerInt64) UnpackField(buf []byte, data any) ([]byte, error) {
+	v, ok := data.(*int64)
+	if ok == false {
+		return nil, fmt.Errorf("expected int64 pointer, got %T", data)
+	}
+
+	buf, x := wtintpack.UnpackInt(buf)
+
+	*v = int64(x)
+
+	return buf, nil
+}
+
+type fieldPackerUint64 struct {
+}
+
+func (p fieldPackerUint64) PackField(data any, buf []byte) ([]byte, error) {
+	v, ok := data.(uint64)
+	if !ok {
+		return nil, fmt.Errorf("expected uint64, got %T", data)
+	}
+
+	buf = wtintpack.PackUint(buf, uint64(v))
+
+	return buf, nil
+}
+
+func (p fieldPackerUint64) UnpackField(buf []byte, data any) ([]byte, error) {
+	v, ok := data.(*uint64)
+	if ok == false {
+		return nil, fmt.Errorf("expected uint64 pointer, got %T", data)
+	}
+
+	buf, x := wtintpack.UnpackUint(buf)
+
+	*v = uint64(x)
+
+	return buf, nil
 }
 
 type fieldPackerFixedSizeString struct {
@@ -142,8 +360,70 @@ func ParseFormat(format string) ([]FieldPacker, error) {
 		}
 
 		switch char {
-		case 'S':
-			packers = append(packers, fieldPackerNullTerminatedString{size: size})
+		case 'b':
+			if size == 0 {
+				size = 1
+			}
+
+			for i := 0; i < size; i++ {
+				packers = append(packers, fieldPackerInt8{})
+			}
+		case 'B':
+			if size == 0 {
+				size = 1
+			}
+
+			for i := 0; i < size; i++ {
+				packers = append(packers, fieldPackerUint8{})
+			}
+		case 'h':
+			if size == 0 {
+				size = 1
+			}
+
+			for i := 0; i < size; i++ {
+				packers = append(packers, fieldPackerInt16{})
+			}
+		case 'H':
+			if size == 0 {
+				size = 1
+			}
+
+			for i := 0; i < size; i++ {
+				packers = append(packers, fieldPackerUint16{})
+			}
+		case 'i', 'l':
+			if size == 0 {
+				size = 1
+			}
+
+			for i := 0; i < size; i++ {
+				packers = append(packers, fieldPackerInt32{})
+			}
+		case 'I', 'L':
+			if size == 0 {
+				size = 1
+			}
+
+			for i := 0; i < size; i++ {
+				packers = append(packers, fieldPackerUint32{})
+			}
+		case 'q':
+			if size == 0 {
+				size = 1
+			}
+
+			for i := 0; i < size; i++ {
+				packers = append(packers, fieldPackerInt64{})
+			}
+		case 'Q', 'r':
+			if size == 0 {
+				size = 1
+			}
+
+			for i := 0; i < size; i++ {
+				packers = append(packers, fieldPackerUint64{})
+			}
 		case 's':
 			s := size
 			if s == 0 {
@@ -151,6 +431,8 @@ func ParseFormat(format string) ([]FieldPacker, error) {
 			}
 
 			packers = append(packers, fieldPackerFixedSizeString{size: s})
+		case 'S':
+			packers = append(packers, fieldPackerNullTerminatedString{size: size})
 		default:
 			return nil, fmt.Errorf("'%s' is not a supported format directive", string(char))
 		}
