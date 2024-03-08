@@ -7,10 +7,6 @@ import (
 	"wtgo/internal/wtformat/internal/wtintpack"
 )
 
-type packer struct {
-	fields []FieldPacker
-}
-
 type FieldPacker interface {
 	PackField(data any, buf []byte) ([]byte, error)
 	UnpackField(buf []byte, data any) ([]byte, error)
