@@ -315,5 +315,74 @@ func TestTransactions(t *testing.T) {
 	if err := env.conn.Close(""); err != nil {
 		t.Fatalf("close connection: %s", err)
 	}
+}
 
+func TestCursorOperations(t *testing.T) {
+	tablename := "table:test-table"
+	tableconf := "key_format=S,value_format=S"
+
+	env, err := newTableCursorTestEnv("create", "", tablename, tableconf, "")
+	if err != nil {
+		t.Fatalf("new table cursor test env: %s", err)
+	}
+
+	t.Cleanup(func() { env.Close() })
+
+	t.Run("compare", func(t *testing.T) {
+		cases := map[string]struct {
+			cursorKey string
+			otherKey  string
+			want      wtgo.CursorComparison
+		}{
+			"equal": {
+				cursorKey: "a",
+				otherKey:  "a",
+				want:      wtgo.CursorComparisonEqual,
+			},
+			"less-than": {
+				cursorKey: "a",
+				otherKey:  "b",
+				want:      wtgo.CursorComparisonLessThan,
+			},
+			"greater-than": {
+				cursorKey: "b",
+				otherKey:  "a",
+				want:      wtgo.CursorComparisonGreaterThan,
+			},
+		}
+
+		other, err := env.session.OpenCursor(tablename, "")
+		if err != nil {
+			t.Fatalf("open other: %s", err)
+		}
+
+		for name, tc := range cases {
+			t.Run(name, func(t *testing.T) {
+				if err := env.cursor.Reset(); err != nil {
+					t.Fatalf("reset: %s", err)
+				}
+
+				if err := other.Reset(); err != nil {
+					t.Fatalf("reset: %s", err)
+				}
+
+				if err := env.cursor.SetKey(tc.cursorKey); err != nil {
+					t.Fatalf("set cursor key: %s", err)
+				}
+
+				if err := other.SetKey(tc.otherKey); err != nil {
+					t.Fatalf("set other key: %s", err)
+				}
+
+				comparison, err := env.cursor.Compare(other)
+				if err != nil {
+					t.Fatalf("compare: %s", err)
+				}
+
+				if diff := cmp.Diff(tc.want, comparison); diff != "" {
+					t.Fatalf("output doesn't match (-want +got):\n%s", diff)
+				}
+			})
+		}
+	})
 }

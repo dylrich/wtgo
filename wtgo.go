@@ -55,6 +55,20 @@ int wiredtiger_cursor_close(WT_CURSOR *cursor) {
 	return cursor->close(cursor);
 }
 
+int wiredtiger_cursor_compare(WT_CURSOR *cursor, WT_CURSOR *other, int *comparep, const void *packed_key_c, size_t key_size_c, const void *packed_key_o, size_t key_size_o) {
+	WT_ITEM keyc;
+	keyc.data = packed_key_c;
+	keyc.size = key_size_c;
+	cursor->set_key(cursor, &keyc);
+
+	WT_ITEM keyo;
+	keyo.data = packed_key_o;
+	keyo.size = key_size_o;
+	other->set_key(other, &keyo);
+
+	return cursor->compare(cursor, other, comparep);
+}
+
 int wiredtiger_cursor_insert(WT_CURSOR *cursor, const void *packed_key, size_t key_size, const void *packed_value, size_t value_size) {
 
 	WT_ITEM key;
@@ -107,6 +121,14 @@ import (
 	"fmt"
 	"unsafe"
 	"wtgo/internal/wtformat"
+)
+
+type CursorComparison int8
+
+const (
+	CursorComparisonEqual       CursorComparison = 0
+	CursorComparisonLessThan    CursorComparison = -1
+	CursorComparisonGreaterThan CursorComparison = 1
 )
 
 type Connection struct {
@@ -312,6 +334,22 @@ func (c *Cursor) Close() error {
 	}
 
 	return nil
+}
+
+func (c *Cursor) Compare(o *Cursor) (CursorComparison, error) {
+	var compare C.int
+
+	packedKeyC := unsafe.Pointer(&c.keybuf[0])
+	keySizeC := C.size_t(len(c.keybuf))
+
+	packedKeyO := unsafe.Pointer(&o.keybuf[0])
+	keySizeO := C.size_t(len(o.keybuf))
+
+	if code := int(C.wiredtiger_cursor_compare(c.wtcursor, o.wtcursor, &compare, packedKeyC, keySizeC, packedKeyO, keySizeO)); code != 0 {
+		return 0, ErrorCode(code)
+	}
+
+	return CursorComparison(compare), nil
 }
 
 func (c *Cursor) SetKey(keys ...any) error {
