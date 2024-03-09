@@ -11,52 +11,43 @@ import (
 )
 
 func TestAll(t *testing.T) {
-	conn, err := wtgo.Open("./test", "create")
+	tablename := "table:test-table"
+	tableconf := "key_format=SS,value_format=SS"
+
+	env, err := newTableCursorTestEnv("create", "", tablename, tableconf, "")
 	if err != nil {
-		t.Fatalf("open database: %s", err)
+		t.Fatalf("new table cursor test env: %s", err)
 	}
 
-	session, err := conn.OpenSession("")
-	if err != nil {
-		t.Fatalf("open session: %s", err)
-	}
-
-	if err := session.Create("table:test-table", "key_format=SS,value_format=SS"); err != nil {
-		t.Fatalf("create object: %s", err)
-	}
-
-	cursor, err := session.OpenCursor("table:test-table", "")
-	if err != nil {
-		t.Fatalf("open cursor: %s", err)
-	}
+	t.Cleanup(func() { env.Close() })
 
 	key1, key2 := "key-part-1", "key-part-2"
 	value1, value2 := "value-part-1", "value-part-2"
 
-	if err := cursor.SetKey(key1, key2); err != nil {
+	if err := env.cursor.SetKey(key1, key2); err != nil {
 		t.Fatalf("set key: %s", err)
 	}
 
-	if err := cursor.SetValue(value1, value2); err != nil {
+	if err := env.cursor.SetValue(value1, value2); err != nil {
 		t.Fatalf("set value: %s", err)
 	}
 
-	if err := cursor.Insert(); err != nil {
+	if err := env.cursor.Insert(); err != nil {
 		t.Fatalf("insert: %s", err)
 	}
 
-	if err := cursor.Reset(); err != nil {
+	if err := env.cursor.Reset(); err != nil {
 		t.Fatalf("reset: %s", err)
 	}
 
-	for cursor.Next() {
+	for env.cursor.Next() {
 		var k1, k2, v1, v2 string
 
-		if err := cursor.GetKey(&k1, &k2); err != nil {
+		if err := env.cursor.GetKey(&k1, &k2); err != nil {
 			t.Fatalf("get key: %s", err)
 		}
 
-		if err := cursor.GetValue(&v1, &v2); err != nil {
+		if err := env.cursor.GetValue(&v1, &v2); err != nil {
 			t.Fatalf("get value: %s", err)
 		}
 
@@ -77,11 +68,11 @@ func TestAll(t *testing.T) {
 		}
 	}
 
-	if err := cursor.Err(); err != nil {
+	if err := env.cursor.Err(); err != nil {
 		t.Fatalf("cursor: %s", err)
 	}
 
-	if err := conn.Close(""); err != nil {
+	if err := env.conn.Close(""); err != nil {
 		t.Fatalf("close: %s", err)
 	}
 }
