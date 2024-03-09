@@ -393,11 +393,11 @@ func insert[K, V any](cursor *wtgo.Cursor, k K, v V) error {
 	}
 
 	if err := cursor.SetKey(k); err != nil {
-		return fmt.Errorf("set key: %s", err)
+		return fmt.Errorf("set key: %w", err)
 	}
 
 	if err := cursor.SetValue(v); err != nil {
-		return fmt.Errorf("set value: %s", err)
+		return fmt.Errorf("set value: %w", err)
 	}
 
 	if err := cursor.Insert(); err != nil {
