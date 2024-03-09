@@ -308,20 +308,33 @@ func TestPrev(t *testing.T) {
 		t.Fatalf("seed database: %s", err)
 	}
 
-	// if err := env.cursor.Reset(); err != nil {
-	// 	t.Fatalf("reset: %s", err)
-	// }
-
-	// if err := env.cursor.SetKey(""); err != nil {
-	// 	t.Fatalf("set key: %s", err)
-	// }
-
-	// if err := env.cursor.Search(); err != nil {
-	// 	t.Fatalf("search: %s", err)
-	// }
-	// i := len(records) - 1
-
 	for i := len(records) - 1; env.cursor.Prev(); i-- {
+		var k, v string
+
+		if err := env.cursor.GetKey(&k); err != nil {
+			t.Fatalf("get key: %s", err)
+		}
+
+		if err := env.cursor.GetValue(&v); err != nil {
+			t.Fatalf("get value: %s", err)
+		}
+
+		want := records[i]
+
+		if diff := cmp.Diff(want.k, []any{k}); diff != "" {
+			t.Fatalf("key doesn't match (-want +got):\n%s", diff)
+		}
+
+		if diff := cmp.Diff(want.v, []any{v}); diff != "" {
+			t.Fatalf("value doesn't match (-want +got):\n%s", diff)
+		}
+	}
+
+	if err := env.cursor.Err(); err != nil {
+		t.Fatalf("cursor: %s", err)
+	}
+}
+
 		var k, v string
 
 		if err := env.cursor.GetKey(&k); err != nil {
