@@ -436,6 +436,19 @@ func (c *Cursor) Next() bool {
 	return true
 }
 
+func (c *Cursor) Prev() bool {
+	if code := int(C.wiredtiger_cursor_prev(c.wtcursor)); code != 0 {
+		if ErrorCode(code) == ErrNotFound {
+			return false
+		}
+
+		c.err = ErrorCode(code)
+		return false
+	}
+
+	return true
+}
+
 func (c *Cursor) Err() error {
 	return c.err
 }

@@ -260,6 +260,94 @@ func searchKey[K, V any](cursor *wtgo.Cursor, key K) (*result[K, V], error) {
 	return r, nil
 }
 
+type record struct {
+	k []any
+	v []any
+}
+
+func seed(cursor *wtgo.Cursor, data []record) error {
+	for _, d := range data {
+		if err := cursor.SetKey(d.k...); err != nil {
+			return fmt.Errorf("set key: %w", err)
+		}
+
+		if err := cursor.SetValue(d.v...); err != nil {
+			return fmt.Errorf("set value: %w", err)
+		}
+
+		if err := cursor.Insert(); err != nil {
+			return fmt.Errorf("insert: %w", err)
+		}
+
+		if err := cursor.Reset(); err != nil {
+			return fmt.Errorf("reset: %w", err)
+		}
+	}
+
+	return nil
+}
+
+func TestPrev(t *testing.T) {
+	tablename := "table:test-table"
+	tableconf := "key_format=S,value_format=S"
+
+	env, err := newTableCursorTestEnv("create", "", tablename, tableconf, "")
+	if err != nil {
+		t.Fatalf("new table cursor test env: %s", err)
+	}
+
+	t.Cleanup(func() { env.Close() })
+
+	records := []record{
+		{k: []any{"1"}, v: []any{"a"}},
+		{k: []any{"2"}, v: []any{"b"}},
+		{k: []any{"3"}, v: []any{"c"}},
+	}
+
+	if err := seed(env.cursor, records); err != nil {
+		t.Fatalf("seed database: %s", err)
+	}
+
+	// if err := env.cursor.Reset(); err != nil {
+	// 	t.Fatalf("reset: %s", err)
+	// }
+
+	// if err := env.cursor.SetKey(""); err != nil {
+	// 	t.Fatalf("set key: %s", err)
+	// }
+
+	// if err := env.cursor.Search(); err != nil {
+	// 	t.Fatalf("search: %s", err)
+	// }
+	// i := len(records) - 1
+
+	for i := len(records) - 1; env.cursor.Prev(); i-- {
+		var k, v string
+
+		if err := env.cursor.GetKey(&k); err != nil {
+			t.Fatalf("get key: %s", err)
+		}
+
+		if err := env.cursor.GetValue(&v); err != nil {
+			t.Fatalf("get value: %s", err)
+		}
+
+		want := records[i]
+
+		if diff := cmp.Diff(want.k, []any{k}); diff != "" {
+			t.Fatalf("key doesn't match (-want +got):\n%s", diff)
+		}
+
+		if diff := cmp.Diff(want.v, []any{v}); diff != "" {
+			t.Fatalf("value doesn't match (-want +got):\n%s", diff)
+		}
+	}
+
+	if err := env.cursor.Err(); err != nil {
+		t.Fatalf("cursor: %s", err)
+	}
+}
+
 func TestTransactions(t *testing.T) {
 	tablename := "table:test-table"
 	tableconf := "key_format=S,value_format=S"
