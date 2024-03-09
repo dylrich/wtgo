@@ -122,6 +122,10 @@ int wiredtiger_cursor_reconfigure(WT_CURSOR *cursor, const char *config) {
 	return cursor->reconfigure(cursor, config);
 }
 
+int wiredtiger_cursor_largest_key(WT_CURSOR *cursor) {
+	return cursor->largest_key(cursor);
+}
+
 int wiredtiger_cursor_search(WT_CURSOR *cursor, const void *packed_key, size_t key_size) {
 	WT_ITEM key;
 	key.data = packed_key;
@@ -355,6 +359,15 @@ func (s *Session) OpenCursor(uri, config string) (*Cursor, error) {
 
 func (c *Cursor) Close() error {
 	if code := int(C.wiredtiger_cursor_close(c.wtcursor)); code != 0 {
+		return ErrorCode(code)
+	}
+
+	return nil
+}
+
+
+func (c *Cursor) LargestKey() error {
+	if code := int(C.wiredtiger_cursor_largest_key(c.wtcursor)); code != 0 {
 		return ErrorCode(code)
 	}
 
