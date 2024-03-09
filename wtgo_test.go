@@ -335,6 +335,64 @@ func TestPrev(t *testing.T) {
 	}
 }
 
+func TestModify(t *testing.T) {
+	tablename := "table:test-table"
+	tableconf := "key_format=S,value_format=S"
+
+	env, err := newTableCursorTestEnv("create", "", tablename, tableconf, "")
+	if err != nil {
+		t.Fatalf("new table cursor test env: %s", err)
+	}
+
+	t.Cleanup(func() { env.Close() })
+
+	records := []record{
+		{k: []any{"1"}, v: []any{"a"}},
+		{k: []any{"2"}, v: []any{"b"}},
+		{k: []any{"3"}, v: []any{"c"}},
+	}
+
+	if err := seed(env.cursor, records); err != nil {
+		t.Fatalf("seed database: %s", err)
+	}
+
+	if err := env.cursor.Reset(); err != nil {
+		t.Fatalf("reset cursor: %s", err)
+	}
+
+	modifications := []wtgo.Modification{
+		{
+			Data:   []byte("hello world"),
+			Offset: 0,
+			Size:   1,
+		},
+	}
+
+	if err := env.session.BeginTransaction(""); err != nil {
+		t.Fatalf("begin transaction: %s", err)
+	}
+
+	if err := env.cursor.SetKey("1"); err != nil {
+		t.Fatalf("set key: %s", err)
+	}
+
+	if err := env.cursor.Search(); err != nil {
+		t.Fatalf("search: %s", err)
+	}
+
+	if err := env.cursor.Modify(modifications); err != nil {
+		t.Fatalf("modify: %s", err)
+	}
+
+	if err := env.session.CommitTransaction(""); err != nil {
+		t.Fatalf("commit transaction: %s", err)
+	}
+
+	if err := env.cursor.Reset(); err != nil {
+		t.Fatalf("reset cursor after commit: %s", err)
+	}
+
+	for i := 0; env.cursor.Next(); i++ {
 		var k, v string
 
 		if err := env.cursor.GetKey(&k); err != nil {
@@ -346,6 +404,9 @@ func TestPrev(t *testing.T) {
 		}
 
 		want := records[i]
+		if i == 0 {
+			want.v = []any{"hello world"}
+		}
 
 		if diff := cmp.Diff(want.k, []any{k}); diff != "" {
 			t.Fatalf("key doesn't match (-want +got):\n%s", diff)
@@ -357,7 +418,7 @@ func TestPrev(t *testing.T) {
 	}
 
 	if err := env.cursor.Err(); err != nil {
-		t.Fatalf("cursor: %s", err)
+		t.Fatalf("iteration: %s", err)
 	}
 }
 

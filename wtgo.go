@@ -130,6 +130,10 @@ int wiredtiger_cursor_bound(WT_CURSOR *cursor, const char *config) {
 	return cursor->bound(cursor, config);
 }
 
+int wiredtiger_cursor_modify(WT_CURSOR *cursor, WT_MODIFY *entries, int nentries) {
+	return cursor->modify(cursor, entries, nentries);
+}
+
 int wiredtiger_cursor_search(WT_CURSOR *cursor, const void *packed_key, size_t key_size) {
 	WT_ITEM key;
 	key.data = packed_key;
@@ -369,6 +373,38 @@ func (c *Cursor) Close() error {
 	return nil
 }
 
+type Modification struct {
+	Data   []byte
+	Offset uint64
+	Size   uint64
+}
+
+func (c *Cursor) Modify(modifications []Modification) error {
+	entries := make([]C.WT_MODIFY, 0, len(modifications))
+
+	for _, m := range modifications {
+		e := C.WT_MODIFY{
+			data: C.WT_ITEM{
+				data: C.CBytes(m.Data),
+				size: C.size_t(len(m.Data)),
+			},
+			offset: C.size_t(m.Offset),
+			size:   C.size_t(m.Size),
+		}
+
+		defer C.free(unsafe.Pointer(e.data.data))
+
+		entries = append(entries, e)
+	}
+
+	nentries := C.int(len(entries))
+
+	if code := C.wiredtiger_cursor_modify(c.wtcursor, &entries[0], nentries); code != 0 {
+		return ErrorCode(code)
+	}
+
+	return nil
+}
 
 func (c *Cursor) LargestKey() error {
 	if code := int(C.wiredtiger_cursor_largest_key(c.wtcursor)); code != 0 {
