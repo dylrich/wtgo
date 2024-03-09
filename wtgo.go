@@ -84,7 +84,6 @@ int wiredtiger_cursor_equals(WT_CURSOR *cursor, WT_CURSOR *other, int *comparep,
 }
 
 int wiredtiger_cursor_insert(WT_CURSOR *cursor, const void *packed_key, size_t key_size, const void *packed_value, size_t value_size) {
-
 	WT_ITEM key;
 	key.data = packed_key;
 	key.size = key_size;
