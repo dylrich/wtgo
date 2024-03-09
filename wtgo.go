@@ -126,6 +126,10 @@ int wiredtiger_cursor_largest_key(WT_CURSOR *cursor) {
 	return cursor->largest_key(cursor);
 }
 
+int wiredtiger_cursor_bound(WT_CURSOR *cursor, const char *config) {
+	return cursor->bound(cursor, config);
+}
+
 int wiredtiger_cursor_search(WT_CURSOR *cursor, const void *packed_key, size_t key_size) {
 	WT_ITEM key;
 	key.data = packed_key;
@@ -423,6 +427,21 @@ func (c *Cursor) SetKey(keys ...any) error {
 	}
 
 	c.keybuf = buf
+
+	return nil
+}
+
+func (c *Cursor) Bound(config string) error {
+	var configcstr *C.char
+
+	if config != "" {
+		configcstr = C.CString(config)
+		defer C.free(unsafe.Pointer(configcstr))
+	}
+
+	if code := int(C.wiredtiger_cursor_bound(c.wtcursor, configcstr)); code != 0 {
+		return ErrorCode(code)
+	}
 
 	return nil
 }
