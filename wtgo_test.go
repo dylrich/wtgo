@@ -127,6 +127,44 @@ func newTableCursorTestEnv(connectionc, sessionc, tablename, tablec, cursorc str
 	return env, nil
 }
 
+func TestRemove(t *testing.T) {
+	tablename := "table:test-table"
+	tableconf := "key_format=S,value_format=S"
+
+	env, err := newTableCursorTestEnv("create", "", tablename, tableconf, "")
+	if err != nil {
+		t.Fatalf("new table cursor test env: %s", err)
+	}
+
+	t.Cleanup(func() { env.Close() })
+
+	records := []record{
+		{k: []any{"1"}, v: []any{"a"}},
+		{k: []any{"2"}, v: []any{"b"}},
+		{k: []any{"3"}, v: []any{"c"}},
+	}
+
+	if err := seed(env.cursor, records); err != nil {
+		t.Fatalf("seed database: %s", err)
+	}
+
+	if err := env.cursor.SetKey("1"); err != nil {
+		t.Fatalf("set remove key: %s", err)
+	}
+
+	if err := env.cursor.Remove(); err != nil {
+		t.Fatalf("remove: %s", err)
+	}
+
+	if err := env.cursor.SetKey("1"); err != nil {
+		t.Fatalf("set search key: %s", err)
+	}
+
+	if err := env.cursor.Search(); !errors.Is(err, wtgo.ErrNotFound) {
+		t.Fatalf("search for missing key returned err '%s', expected not found", err)
+	}
+}
+
 func TestSearch(t *testing.T) {
 	tablename := "table:test-table"
 	tableconf := "key_format=s,value_format=s"

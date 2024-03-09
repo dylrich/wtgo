@@ -97,6 +97,15 @@ int wiredtiger_cursor_insert(WT_CURSOR *cursor, const void *packed_key, size_t k
 	return cursor->insert(cursor);
 }
 
+int wiredtiger_cursor_remove(WT_CURSOR *cursor, const void *packed_key, size_t key_size) {
+	WT_ITEM key;
+	key.data = packed_key;
+	key.size = key_size;
+	cursor->set_key(cursor, &key);
+
+	return cursor->remove(cursor);
+}
+
 int wiredtiger_cursor_reset(WT_CURSOR *cursor) {
 	return cursor->reset(cursor);
 }
@@ -510,6 +519,20 @@ func (c *Cursor) Insert() error {
 	valueSize := C.size_t(len(c.valuebuf))
 
 	if code := int(C.wiredtiger_cursor_insert(c.wtcursor, packedKey, keySize, packedValue, valueSize)); code != 0 {
+		return ErrorCode(code)
+	}
+
+	c.keybuf = c.keybuf[:0]
+	c.valuebuf = c.valuebuf[:0]
+
+	return nil
+}
+
+func (c *Cursor) Remove() error {
+	packedKey := unsafe.Pointer(&c.keybuf[0])
+	keySize := C.size_t(len(c.keybuf))
+
+	if code := int(C.wiredtiger_cursor_remove(c.wtcursor, packedKey, keySize)); code != 0 {
 		return ErrorCode(code)
 	}
 
