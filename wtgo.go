@@ -110,6 +110,10 @@ int wiredtiger_cursor_reset(WT_CURSOR *cursor) {
 	return cursor->reset(cursor);
 }
 
+int wiredtiger_cursor_reserve(WT_CURSOR *cursor) {
+	return cursor->reserve(cursor);
+}
+
 int wiredtiger_cursor_get_key(WT_CURSOR *cursor, WT_ITEM *v) {
 	return cursor->get_key(cursor, v);
 }
@@ -548,6 +552,14 @@ func (c *Cursor) Reset() error {
 	c.err = nil
 
 	if code := int(C.wiredtiger_cursor_reset(c.wtcursor)); code != 0 {
+		return ErrorCode(code)
+	}
+
+	return nil
+}
+
+func (c *Cursor) Reserve() error {
+	if code := int(C.wiredtiger_cursor_reserve(c.wtcursor)); code != 0 {
 		return ErrorCode(code)
 	}
 
