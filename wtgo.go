@@ -154,6 +154,15 @@ int wiredtiger_cursor_search(WT_CURSOR *cursor, const void *packed_key, size_t k
 
 	return cursor->search(cursor);
 }
+
+int wiredtiger_cursor_search_near(WT_CURSOR *cursor, int *exactp, const void *packed_key, size_t key_size) {
+	WT_ITEM key;
+	key.data = packed_key;
+	key.size = key_size;
+	cursor->set_key(cursor, &key);
+
+	return cursor->search_near(cursor, exactp);
+}
 */
 import (
 	"C"
@@ -662,6 +671,19 @@ func (c *Cursor) Search() error {
 	}
 
 	return nil
+}
+
+func (c *Cursor) SearchNear() (CursorComparison, error) {
+	packedkey := unsafe.Pointer(&c.keybuf[0])
+	size := C.size_t(len(c.keybuf))
+
+	var comp C.int
+
+	if code := int(C.wiredtiger_cursor_search_near(c.wtcursor, &comp, packedkey, size)); code != 0 {
+		return -2, ErrorCode(code)
+	}
+
+	return CursorComparison(int(comp)), nil
 }
 
 type ErrorCode int16

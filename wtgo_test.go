@@ -240,6 +240,153 @@ func TestSearch(t *testing.T) {
 	}
 }
 
+func TestSearchNear(t *testing.T) {
+	tablename := "table:test-table"
+	tableconf := "key_format=S,value_format=S"
+
+	env, err := newTableCursorTestEnv("create", "", tablename, tableconf, "")
+	if err != nil {
+		t.Fatalf("new table cursor test env: %s", err)
+	}
+
+	t.Cleanup(func() { env.Close() })
+
+	records := []record{
+		{k: []any{"a"}, v: []any{"1"}},
+		{k: []any{"b"}, v: []any{"2"}},
+		{k: []any{"c"}, v: []any{"3"}},
+		{k: []any{"d"}, v: []any{"4"}},
+		{k: []any{"f"}, v: []any{"5"}},
+		{k: []any{"g"}, v: []any{"6"}},
+		{k: []any{"h"}, v: []any{"7"}},
+		{k: []any{"l"}, v: []any{"8"}},
+		{k: []any{"m"}, v: []any{"9"}},
+		{k: []any{"n"}, v: []any{"10"}},
+	}
+
+	if err := seed(env.cursor, records); err != nil {
+		t.Fatalf("seed database: %s", err)
+	}
+
+	if err := env.cursor.SetKey("4"); err != nil {
+		t.Fatalf("set key: %s", err)
+	}
+
+	cases := map[string]struct {
+		key      string
+		include  compareFunc
+		iterator iteratorFunc
+		want     []result[string, string]
+	}{
+		"missing-greater-than-or-equal-next-no-skew": {
+			key:      "e",
+			include:  includeGreaterThanOrEqual,
+			iterator: env.cursor.Next,
+			want: []result[string, string]{
+				{Key: "f", Value: "5"},
+				{Key: "g", Value: "6"},
+				{Key: "h", Value: "7"},
+				{Key: "l", Value: "8"},
+				{Key: "m", Value: "9"},
+				{Key: "n", Value: "10"},
+			},
+		},
+		"missing-greater-than-next-no-skew": {
+			key:      "e",
+			include:  includeGreaterThan,
+			iterator: env.cursor.Next,
+			want: []result[string, string]{
+				{Key: "f", Value: "5"},
+				{Key: "g", Value: "6"},
+				{Key: "h", Value: "7"},
+				{Key: "l", Value: "8"},
+				{Key: "m", Value: "9"},
+				{Key: "n", Value: "10"},
+			},
+		},
+		"present-greater-than-next": {
+			key:      "f",
+			include:  includeGreaterThan,
+			iterator: env.cursor.Next,
+			want: []result[string, string]{
+				{Key: "g", Value: "6"},
+				{Key: "h", Value: "7"},
+				{Key: "l", Value: "8"},
+				{Key: "m", Value: "9"},
+				{Key: "n", Value: "10"},
+			},
+		},
+		"present-greater-than-or-equal-next": {
+			key:      "f",
+			include:  includeGreaterThanOrEqual,
+			iterator: env.cursor.Next,
+			want: []result[string, string]{
+				{Key: "f", Value: "5"},
+				{Key: "g", Value: "6"},
+				{Key: "h", Value: "7"},
+				{Key: "l", Value: "8"},
+				{Key: "m", Value: "9"},
+				{Key: "n", Value: "10"},
+			},
+		},
+		"present-less-than-prev": {
+			key:      "f",
+			include:  includeLessThan,
+			iterator: env.cursor.Prev,
+			want: []result[string, string]{
+				{Key: "d", Value: "4"},
+				{Key: "c", Value: "3"},
+				{Key: "b", Value: "2"},
+				{Key: "a", Value: "1"},
+			},
+		},
+		"present-less-than-or-equal-prev": {
+			key:      "f",
+			include:  includeLessThanOrEqual,
+			iterator: env.cursor.Prev,
+			want: []result[string, string]{
+				{Key: "f", Value: "5"},
+				{Key: "d", Value: "4"},
+				{Key: "c", Value: "3"},
+				{Key: "b", Value: "2"},
+				{Key: "a", Value: "1"},
+			},
+		},
+		"missing-greater-than-or-equal-next-skew": {
+			key:      "k",
+			include:  includeGreaterThanOrEqual,
+			iterator: env.cursor.Next,
+			want: []result[string, string]{
+				{Key: "l", Value: "8"},
+				{Key: "m", Value: "9"},
+				{Key: "n", Value: "10"},
+			},
+		},
+		"missing-equal-skew": {
+			key:      "k",
+			include:  includeEqual,
+			iterator: env.cursor.Next,
+			want: []result[string, string]{
+				{Key: "m", Value: "9"},
+				{Key: "n", Value: "10"},
+			},
+		},
+	}
+
+	for name, tc := range cases {
+		t.Run(name, func(t *testing.T) {
+			results, err := searchNearKey[string, string](env.cursor, tc.key, tc.include, tc.iterator)
+			if err != nil {
+				t.Fatalf("search near key: %s", err)
+			}
+
+			if diff := cmp.Diff(tc.want, results); diff != "" {
+				t.Fatalf("results don't match (-want +got):\n%s", diff)
+			}
+		})
+	}
+}
+
 func insert[K, V any](cursor *wtgo.Cursor, k K, v V) error {
 	if err := cursor.Reset(); err != nil {
 		return fmt.Errorf("reset: %w", err)
@@ -261,8 +408,94 @@ func insert[K, V any](cursor *wtgo.Cursor, k K, v V) error {
 }
 
 type result[K, V any] struct {
-	key   K
-	value V
+	Key   K
+	Value V
+}
+
+func getResult[K, V any](cursor *wtgo.Cursor) (*result[K, V], error) {
+	var k K
+
+	if err := cursor.GetKey(&k); err != nil {
+		return nil, fmt.Errorf("get key: %w", err)
+	}
+
+	var v V
+
+	if err := cursor.GetValue(&v); err != nil {
+		return nil, fmt.Errorf("get value: %w", err)
+	}
+
+	r := &result[K, V]{
+		Key:   k,
+		Value: v,
+	}
+
+	return r, nil
+}
+
+type iteratorFunc func() bool
+
+type compareFunc func(comp wtgo.CursorComparison) bool
+
+func includeGreaterThanOrEqual(comp wtgo.CursorComparison) bool {
+	return comp >= wtgo.CursorComparisonEqual
+}
+
+func includeGreaterThan(comp wtgo.CursorComparison) bool {
+	return comp > wtgo.CursorComparisonEqual
+}
+
+func includeLessThan(comp wtgo.CursorComparison) bool {
+	return comp < wtgo.CursorComparisonEqual
+}
+
+func includeLessThanOrEqual(comp wtgo.CursorComparison) bool {
+	return comp <= wtgo.CursorComparisonEqual
+}
+
+func includeEqual(comp wtgo.CursorComparison) bool {
+	return comp == wtgo.CursorComparisonEqual
+}
+
+func searchNearKey[K, V any](cursor *wtgo.Cursor, key K, include compareFunc, it iteratorFunc) ([]result[K, V], error) {
+	if err := cursor.Reset(); err != nil {
+		return nil, fmt.Errorf("reset: %w", err)
+	}
+
+	if err := cursor.SetKey(key); err != nil {
+		return nil, fmt.Errorf("set key: %w", err)
+	}
+
+	comp, err := cursor.SearchNear()
+	if err != nil {
+		return nil, fmt.Errorf("search near: %w", err)
+	}
+
+	results := make([]result[K, V], 0, 4)
+
+	if include(comp) {
+		r, err := getResult[K, V](cursor)
+		if err != nil {
+			return nil, fmt.Errorf("get result: %w", err)
+		}
+
+		results = append(results, *r)
+	}
+
+	for it() {
+		r, err := getResult[K, V](cursor)
+		if err != nil {
+			return nil, fmt.Errorf("get result: %w", err)
+		}
+
+		results = append(results, *r)
+	}
+
+	if err := cursor.Err(); err != nil {
+		return nil, fmt.Errorf("iteration: %s", err)
+	}
+
+	return results, nil
 }
 
 func searchKey[K, V any](cursor *wtgo.Cursor, key K) (*result[K, V], error) {
@@ -291,8 +524,8 @@ func searchKey[K, V any](cursor *wtgo.Cursor, key K) (*result[K, V], error) {
 	}
 
 	r := &result[K, V]{
-		key:   k,
-		value: v,
+		Key:   k,
+		Value: v,
 	}
 
 	return r, nil
