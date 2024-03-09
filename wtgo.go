@@ -118,6 +118,10 @@ int wiredtiger_cursor_prev(WT_CURSOR *cursor) {
 	return cursor->prev(cursor);
 }
 
+int wiredtiger_cursor_reconfigure(WT_CURSOR *cursor, const char *config) {
+	return cursor->reconfigure(cursor, config);
+}
+
 int wiredtiger_cursor_search(WT_CURSOR *cursor, const void *packed_key, size_t key_size) {
 	WT_ITEM key;
 	key.data = packed_key;
@@ -488,6 +492,21 @@ func (c *Cursor) Prev() bool {
 
 func (c *Cursor) Err() error {
 	return c.err
+}
+
+func (c *Cursor) Reconfigure(config string) error {
+	var configcstr *C.char
+
+	if config != "" {
+		configcstr = C.CString(config)
+		defer C.free(unsafe.Pointer(configcstr))
+	}
+
+	if code := int(C.wiredtiger_cursor_reconfigure(c.wtcursor, configcstr)); code != 0 {
+		return ErrorCode(code)
+	}
+
+	return nil
 }
 
 func (c *Cursor) GetKey(keys ...any) error {
