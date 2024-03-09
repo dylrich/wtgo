@@ -97,6 +97,20 @@ int wiredtiger_cursor_insert(WT_CURSOR *cursor, const void *packed_key, size_t k
 	return cursor->insert(cursor);
 }
 
+int wiredtiger_cursor_update(WT_CURSOR *cursor, const void *packed_key, size_t key_size, const void *packed_value, size_t value_size) {
+	WT_ITEM key;
+	key.data = packed_key;
+	key.size = key_size;
+	cursor->set_key(cursor, &key);
+
+	WT_ITEM value;
+	value.data = packed_value;
+	value.size = value_size;
+	cursor->set_value(cursor, &value);
+
+	return cursor->update(cursor);
+}
+
 int wiredtiger_cursor_remove(WT_CURSOR *cursor, const void *packed_key, size_t key_size) {
 	WT_ITEM key;
 	key.data = packed_key;
@@ -684,6 +698,23 @@ func (c *Cursor) SearchNear() (CursorComparison, error) {
 	}
 
 	return CursorComparison(int(comp)), nil
+}
+
+func (c *Cursor) Update() error {
+	packedKey := unsafe.Pointer(&c.keybuf[0])
+	keySize := C.size_t(len(c.keybuf))
+
+	packedValue := unsafe.Pointer(&c.valuebuf[0])
+	valueSize := C.size_t(len(c.valuebuf))
+
+	if code := int(C.wiredtiger_cursor_update(c.wtcursor, packedKey, keySize, packedValue, valueSize)); code != 0 {
+		return ErrorCode(code)
+	}
+
+	c.keybuf = c.keybuf[:0]
+	c.valuebuf = c.valuebuf[:0]
+
+	return nil
 }
 
 type ErrorCode int16

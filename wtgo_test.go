@@ -165,6 +165,58 @@ func TestRemove(t *testing.T) {
 	}
 }
 
+func TestUpdate(t *testing.T) {
+	tablename := "table:test-table"
+	tableconf := "key_format=S,value_format=S"
+
+	env, err := newTableCursorTestEnv("create", "", tablename, tableconf, "")
+	if err != nil {
+		t.Fatalf("new table cursor test env: %s", err)
+	}
+
+	t.Cleanup(func() { env.Close() })
+
+	records := []record{
+		{k: []any{"1"}, v: []any{"a"}},
+		{k: []any{"2"}, v: []any{"b"}},
+		{k: []any{"3"}, v: []any{"c"}},
+	}
+
+	if err := seed(env.cursor, records); err != nil {
+		t.Fatalf("seed database: %s", err)
+	}
+
+	if err := env.cursor.SetKey("1"); err != nil {
+		t.Fatalf("set remove key: %s", err)
+	}
+
+	if err := env.cursor.SetValue("d"); err != nil {
+		t.Fatalf("set search key: %s", err)
+	}
+
+	if err := env.cursor.Update(); err != nil {
+		t.Fatalf("update: %s", err)
+	}
+
+	if err := env.cursor.SetKey("1"); err != nil {
+		t.Fatalf("set search key: %s", err)
+	}
+
+	if err := env.cursor.Search(); err != nil {
+		t.Fatalf("search: %s", err)
+	}
+
+	var v string
+
+	if err := env.cursor.GetValue(&v); err != nil {
+		t.Fatalf("get value: %s", err)
+	}
+
+	if diff := cmp.Diff("d", v); diff != "" {
+		t.Fatalf("found value doesn't match (-want +got):\n%s", diff)
+	}
+}
+
 func TestSearch(t *testing.T) {
 	tablename := "table:test-table"
 	tableconf := "key_format=s,value_format=s"
