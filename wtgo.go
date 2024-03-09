@@ -20,6 +20,10 @@ int wiredtiger_session_create(WT_SESSION *session, const char *name, const char 
 	return session->create(session, name, config);
 }
 
+int wiredtiger_session_alter(WT_SESSION *session, const char *name, const char *config) {
+	return session->alter(session, name, config);
+}
+
 int wiredtiger_session_reset(WT_SESSION *session) {
 	return session->reset(session);
 }
@@ -338,6 +342,23 @@ func (s *Session) Checkpoint(config string) error {
 	}
 
 	return nil
+}
+
+func (s *Session) Alter(name, config string) error {
+	namecstr := C.CString(name)
+	configcstr := C.CString(config)
+
+	code := int(C.wiredtiger_session_alter(s.wtsession, namecstr, configcstr))
+
+	C.free(unsafe.Pointer(namecstr))
+	C.free(unsafe.Pointer(configcstr))
+
+	if code != 0 {
+		return ErrorCode(code)
+	}
+
+	return nil
+
 }
 
 func (s *Session) Reset() error {
