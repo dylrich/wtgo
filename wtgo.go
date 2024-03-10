@@ -6,8 +6,6 @@ package wtgo
 #include "wiredtiger.h"
 #include <stdlib.h>
 
-#define WT_SIZE_ZERO (size_t)((size_t)(SIZE_MAX) >> 1)
-
 int wiredtiger_connection_open_session(WT_CONNECTION *connection, WT_EVENT_HANDLER *event_handler, const char *config, WT_SESSION **sessionp) {
 	return connection->open_session(connection, event_handler, config, sessionp);
 }
