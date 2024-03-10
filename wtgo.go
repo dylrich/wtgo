@@ -80,6 +80,10 @@ int wiredtiger_session_rollback_transaction(WT_SESSION *session, const char *con
 	return session->rollback_transaction(session, config);
 }
 
+int wiredtiger_session_reset_snapshot(WT_SESSION *session) {
+	return session->reset_snapshot(session);
+}
+
 int wiredtiger_session_open_cursor(WT_SESSION *session, const char *uri, WT_CURSOR *to_dup, const char *config, WT_CURSOR **cursorp) {
 	int ret = session->open_cursor(session, uri, to_dup, config, cursorp);
 	if (ret != 0) {
@@ -433,6 +437,14 @@ func (s *Session) Reconfigure(config string) error {
 	}
 
 	if code := int(C.wiredtiger_session_rollback_transaction(s.wtsession, configcstr)); code != 0 {
+		return ErrorCode(code)
+	}
+
+	return nil
+}
+
+func (s *Session) ResetSnapshot() error {
+	if code := int(C.wiredtiger_session_reset_snapshot(s.wtsession)); code != 0 {
 		return ErrorCode(code)
 	}
 
