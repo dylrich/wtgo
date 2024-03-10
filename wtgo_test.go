@@ -84,8 +84,45 @@ type tableCursorTestEnv struct {
 	dir     string
 }
 
-func (env tableCursorTestEnv) Close() error {
+func (env *tableCursorTestEnv) Close() error {
 	return os.RemoveAll(env.dir)
+}
+
+type sessionTestEnv struct {
+	conn    *wtgo.Connection
+	session *wtgo.Session
+	dir     string
+}
+
+func (env *sessionTestEnv) Close() error {
+	return os.RemoveAll(env.dir)
+}
+
+func newSessionTestEnv(connectionc, sessionc string) (*sessionTestEnv, error) {
+	dir, err := os.MkdirTemp(os.TempDir(), "test-search-*")
+	if err != nil {
+		return nil, fmt.Errorf("make temp dir: %w", err)
+	}
+
+	conn, err := wtgo.Open(dir, connectionc)
+	if err != nil {
+		os.RemoveAll(dir)
+		return nil, fmt.Errorf("open database: %s", err)
+	}
+
+	session, err := conn.OpenSession(sessionc)
+	if err != nil {
+		os.RemoveAll(dir)
+		return nil, fmt.Errorf("open session: %s", err)
+	}
+
+	env := &sessionTestEnv{
+		conn:    conn,
+		session: session,
+		dir:     dir,
+	}
+
+	return env, nil
 }
 
 func newTableCursorTestEnv(connectionc, sessionc, tablename, tablec, cursorc string) (*tableCursorTestEnv, error) {
@@ -790,6 +827,32 @@ func TestTransactions(t *testing.T) {
 
 	if err := env.conn.Close(""); err != nil {
 		t.Fatalf("close connection: %s", err)
+	}
+}
+
+func TestSessionRename(t *testing.T) {
+	env, err := newSessionTestEnv("create", "")
+	if err != nil {
+		t.Fatalf("new table cursor test env: %s", err)
+	}
+
+	t.Cleanup(func() { env.Close() })
+
+	tablename := "table:test-table"
+	tableconf := "key_format=S,value_format=S"
+
+	if err := env.session.Create(tablename, tableconf); err != nil {
+		t.Fatalf("create: %s", err)
+	}
+
+	newuri := "table:test-table-renamed"
+
+	if err := env.session.Rename(tablename, newuri); err != nil {
+		t.Fatalf("rename: %s", err)
+	}
+
+	if _, err := env.session.OpenCursor(newuri, ""); err != nil {
+		t.Fatalf("open cursor: %s", err)
 	}
 }
 

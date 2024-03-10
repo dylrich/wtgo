@@ -20,6 +20,10 @@ int wiredtiger_session_create(WT_SESSION *session, const char *name, const char 
 	return session->create(session, name, config);
 }
 
+int wiredtiger_session_rename(WT_SESSION *session, const char *uri, const char *newuri, const char *config) {
+	return session->rename(session, uri, newuri, config);
+}
+
 int wiredtiger_session_alter(WT_SESSION *session, const char *name, const char *config) {
 	return session->alter(session, name, config);
 }
@@ -50,6 +54,10 @@ int wiredtiger_session_query_timestamp(WT_SESSION *session, char *hex_timestamp,
 
 int wiredtiger_session_timestamp_transaction_uint(WT_SESSION *session, WT_TS_TXN_TYPE which, uint64_t ts) {
 	return session->timestamp_transaction_uint(session, which, ts);
+}
+
+int wiredtiger_session_reconfigure(WT_SESSION *session, const char *config) {
+	return session->reconfigure(session, config);
 }
 
 int wiredtiger_session_reset(WT_SESSION *session) {
@@ -410,6 +418,35 @@ func (s *Session) RollbackTransaction(config string) error {
 	}
 
 	if code := int(C.wiredtiger_session_rollback_transaction(s.wtsession, configcstr)); code != 0 {
+		return ErrorCode(code)
+	}
+
+	return nil
+}
+
+func (s *Session) Reconfigure(config string) error {
+	var configcstr *C.char = nil
+
+	if len(config) > 0 {
+		configcstr = C.CString(config)
+		defer C.free(unsafe.Pointer(configcstr))
+	}
+
+	if code := int(C.wiredtiger_session_rollback_transaction(s.wtsession, configcstr)); code != 0 {
+		return ErrorCode(code)
+	}
+
+	return nil
+}
+
+func (s *Session) Rename(fromuri, touri string) error {
+	fromcstr := C.CString(fromuri)
+	defer C.free(unsafe.Pointer(fromcstr))
+
+	tocstr := C.CString(touri)
+	defer C.free(unsafe.Pointer(tocstr))
+
+	if code := int(C.wiredtiger_session_rename(s.wtsession, fromcstr, tocstr, nil)); code != 0 {
 		return ErrorCode(code)
 	}
 
