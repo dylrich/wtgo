@@ -28,6 +28,22 @@ int wiredtiger_session_compact(WT_SESSION *session, const char *name, const char
 	return session->compact(session, name, config);
 }
 
+int wiredtiger_session_drop(WT_SESSION *session, const char *name, const char *config) {
+	return session->drop(session, name, config);
+}
+
+int wiredtiger_session_log_flush(WT_SESSION *session, const char *config) {
+	return session->log_flush(session, config);
+}
+
+int wiredtiger_session_log_printf(WT_SESSION *session, const char *format) {
+	return session->log_printf(session, format);
+}
+
+int wiredtiger_session_prepare_transaction(WT_SESSION *session, const char *config) {
+	return session->prepare_transaction(session, config);
+}
+
 int wiredtiger_session_query_timestamp(WT_SESSION *session, char *hex_timestamp, const char *config) {
 	return session->query_timestamp(session, hex_timestamp, config);
 }
@@ -324,6 +340,21 @@ func (s *Session) CommitTransaction(config string) error {
 	return nil
 }
 
+func (s *Session) PrepareTransaction(config string) error {
+	var configcstr *C.char = nil
+
+	if len(config) > 0 {
+		configcstr = C.CString(config)
+		defer C.free(unsafe.Pointer(configcstr))
+	}
+
+	if code := int(C.wiredtiger_session_prepare_transaction(s.wtsession, configcstr)); code != 0 {
+		return ErrorCode(code)
+	}
+
+	return nil
+}
+
 func (s *Session) QueryTimestamp(config string) (uint64, error) {
 	var configcstr *C.char = nil
 
@@ -436,6 +467,51 @@ func (s *Session) Compact(name, config string) error {
 
 	C.free(unsafe.Pointer(namecstr))
 	C.free(unsafe.Pointer(configcstr))
+
+	if code != 0 {
+		return ErrorCode(code)
+	}
+
+	return nil
+}
+
+func (s *Session) Drop(name, config string) error {
+	namecstr := C.CString(name)
+	configcstr := C.CString(config)
+
+	code := int(C.wiredtiger_session_drop(s.wtsession, namecstr, configcstr))
+
+	C.free(unsafe.Pointer(namecstr))
+	C.free(unsafe.Pointer(configcstr))
+
+	if code != 0 {
+		return ErrorCode(code)
+	}
+
+	return nil
+}
+
+func (s *Session) LogFlush(config string) error {
+	configcstr := C.CString(config)
+
+	code := int(C.wiredtiger_session_log_flush(s.wtsession, configcstr))
+
+	C.free(unsafe.Pointer(configcstr))
+
+	if code != 0 {
+		return ErrorCode(code)
+	}
+
+	return nil
+}
+
+func (s *Session) LogPrintf(format string, a ...any) error {
+	formats := fmt.Sprintf(format, a...)
+	formatcstr := C.CString(formats)
+
+	code := int(C.wiredtiger_session_log_printf(s.wtsession, formatcstr))
+
+	C.free(unsafe.Pointer(formatcstr))
 
 	if code != 0 {
 		return ErrorCode(code)
