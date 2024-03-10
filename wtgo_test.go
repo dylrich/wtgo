@@ -793,6 +793,39 @@ func TestTransactions(t *testing.T) {
 	}
 }
 
+func TestTransactionTimestamps(t *testing.T) {
+	tablename := "table:test-table"
+	tableconf := "key_format=S,value_format=S"
+
+	env, err := newTableCursorTestEnv("create", "", tablename, tableconf, "")
+	if err != nil {
+		t.Fatalf("new table cursor test env: %s", err)
+	}
+
+	t.Cleanup(func() { env.Close() })
+
+	if err := env.session.BeginTransaction(""); err != nil {
+		t.Fatalf("begin transaction: %s", err)
+	}
+
+	if err := env.session.TimestampTransactionUint(wtgo.TransactionTimestampTypeCommit, 100); err != nil {
+		t.Fatalf("timestamp transaction uint: %s", err)
+	}
+
+	ts, err := env.session.QueryTimestamp("get=commit")
+	if err != nil {
+		t.Fatalf("query timestamp: %s", err)
+	}
+
+	if err := env.session.CommitTransaction(""); err != nil {
+		t.Fatalf("commit transaction: %s", err)
+	}
+
+	if ts != 100 {
+		t.Fatalf("expected 100, got %d", ts)
+	}
+}
+
 func TestCursorOperations(t *testing.T) {
 	tablename := "table:test-table"
 	tableconf := "key_format=S,value_format=S"

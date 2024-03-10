@@ -28,6 +28,14 @@ int wiredtiger_session_compact(WT_SESSION *session, const char *name, const char
 	return session->compact(session, name, config);
 }
 
+int wiredtiger_session_query_timestamp(WT_SESSION *session, char *hex_timestamp, const char *config) {
+	return session->query_timestamp(session, hex_timestamp, config);
+}
+
+int wiredtiger_session_timestamp_transaction_uint(WT_SESSION *session, WT_TS_TXN_TYPE which, uint64_t ts) {
+	return session->timestamp_transaction_uint(session, which, ts);
+}
+
 int wiredtiger_session_reset(WT_SESSION *session) {
 	return session->reset(session);
 }
@@ -192,6 +200,7 @@ import (
 
 import (
 	"fmt"
+	"strconv"
 	"unsafe"
 	"wtgo/internal/wtformat"
 )
@@ -209,6 +218,15 @@ type CursorEquality int8
 const (
 	CursorEqualityEqual   CursorEquality = 1
 	CursorEqualityUnequal CursorEquality = 1
+)
+
+type TransactionTimestampType string
+
+const (
+	TransactionTimestampTypeCommit  = "commit"
+	TransactionTimestampTypeDurable = "durable"
+	TransactionTimestampTypePrepare = "prepare"
+	TransactionTimestampTypeRead    = "read"
 )
 
 type Connection struct {
@@ -300,6 +318,52 @@ func (s *Session) CommitTransaction(config string) error {
 	}
 
 	if code := int(C.wiredtiger_session_commit_transaction(s.wtsession, configcstr)); code != 0 {
+		return ErrorCode(code)
+	}
+
+	return nil
+}
+
+func (s *Session) QueryTimestamp(config string) (uint64, error) {
+	var configcstr *C.char = nil
+
+	if len(config) > 0 {
+		configcstr = C.CString(config)
+		defer C.free(unsafe.Pointer(configcstr))
+	}
+
+	tsdata := make([]byte, 17)
+	tsc := C.CString(string(tsdata))
+
+	defer C.free(unsafe.Pointer(tsc))
+
+	if code := int(C.wiredtiger_session_query_timestamp(s.wtsession, tsc, configcstr)); code != 0 {
+		return 0, ErrorCode(code)
+	}
+
+	ts, err := strconv.ParseUint(C.GoString(tsc), 16, 64)
+	if err != nil {
+		return 0, fmt.Errorf("parse hex timestamp: %w", err)
+	}
+
+	return ts, nil
+}
+
+func (s *Session) TimestampTransactionUint(t TransactionTimestampType, ts uint64) error {
+	var which C.WT_TS_TXN_TYPE
+
+	switch t {
+	case TransactionTimestampTypeCommit:
+		which = C.WT_TS_TXN_TYPE_COMMIT
+	case TransactionTimestampTypeDurable:
+		which = C.WT_TS_TXN_TYPE_DURABLE
+	case TransactionTimestampTypePrepare:
+		which = C.WT_TS_TXN_TYPE_PREPARE
+	default:
+		which = C.WT_TS_TXN_TYPE_READ
+	}
+
+	if code := int(C.wiredtiger_session_timestamp_transaction_uint(s.wtsession, which, C.uint64_t(ts))); code != 0 {
 		return ErrorCode(code)
 	}
 
