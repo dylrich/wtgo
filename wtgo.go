@@ -34,6 +34,10 @@ int wiredtiger_session_drop(WT_SESSION *session, const char *name, const char *c
 	return session->drop(session, name, config);
 }
 
+int wiredtiger_session_salvage(WT_SESSION *session, const char *name, const char *config) {
+	return session->salvage(session, name, config);
+}
+
 int wiredtiger_session_log_flush(WT_SESSION *session, const char *config) {
 	return session->log_flush(session, config);
 }
@@ -527,6 +531,22 @@ func (s *Session) Drop(name, config string) error {
 	configcstr := C.CString(config)
 
 	code := int(C.wiredtiger_session_drop(s.wtsession, namecstr, configcstr))
+
+	C.free(unsafe.Pointer(namecstr))
+	C.free(unsafe.Pointer(configcstr))
+
+	if code != 0 {
+		return ErrorCode(code)
+	}
+
+	return nil
+}
+
+func (s *Session) Salvage(name, config string) error {
+	namecstr := C.CString(name)
+	configcstr := C.CString(config)
+
+	code := int(C.wiredtiger_session_salvage(s.wtsession, namecstr, configcstr))
 
 	C.free(unsafe.Pointer(namecstr))
 	C.free(unsafe.Pointer(configcstr))
