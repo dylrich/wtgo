@@ -38,6 +38,18 @@ int wiredtiger_session_salvage(WT_SESSION *session, const char *name, const char
 	return session->salvage(session, name, config);
 }
 
+int wiredtiger_session_upgrade(WT_SESSION *session, const char *name, const char *config) {
+	return session->upgrade(session, name, config);
+}
+
+int wiredtiger_session_verify(WT_SESSION *session, const char *name, const char *config) {
+	return session->verify(session, name, config);
+}
+
+int wiredtiger_transaction_pinned_range(WT_SESSION *session, uint64_t *range) {
+	return session->transaction_pinned_range(session, range);
+}
+
 int wiredtiger_session_log_flush(WT_SESSION *session, const char *config) {
 	return session->log_flush(session, config);
 }
@@ -556,6 +568,48 @@ func (s *Session) Salvage(name, config string) error {
 	}
 
 	return nil
+}
+
+func (s *Session) Upgrade(name string) error {
+	namecstr := C.CString(name)
+
+	code := int(C.wiredtiger_session_upgrade(s.wtsession, namecstr, nil))
+
+	C.free(unsafe.Pointer(namecstr))
+
+	if code != 0 {
+		return ErrorCode(code)
+	}
+
+	return nil
+}
+
+func (s *Session) Verify(name, config string) error {
+	namecstr := C.CString(name)
+	configcstr := C.CString(config)
+
+	code := int(C.wiredtiger_session_verify(s.wtsession, namecstr, configcstr))
+
+	C.free(unsafe.Pointer(namecstr))
+	C.free(unsafe.Pointer(configcstr))
+
+	if code != 0 {
+		return ErrorCode(code)
+	}
+
+	return nil
+}
+
+func (s *Session) TransactionPinnedRange() (uint64, error) {
+	var rangec C.uint64_t
+
+	code := int(C.wiredtiger_session_transaction_pinned_range(s.wtsession, &rangec))
+
+	if code != 0 {
+		return ErrorCode(code)
+	}
+
+	return uint64(rangec), nil
 }
 
 func (s *Session) LogFlush(config string) error {
