@@ -94,6 +94,10 @@ int wiredtiger_session_rollback_transaction(WT_SESSION *session, const char *con
 	return session->rollback_transaction(session, config);
 }
 
+int wiredtiger_session_close(WT_SESSION *session, const char *config) {
+	return session->close(session, config);
+}
+
 int wiredtiger_session_reset_snapshot(WT_SESSION *session) {
 	return session->reset_snapshot(session);
 }
@@ -375,6 +379,21 @@ func (s *Session) PrepareTransaction(config string) error {
 	}
 
 	if code := int(C.wiredtiger_session_prepare_transaction(s.wtsession, configcstr)); code != 0 {
+		return ErrorCode(code)
+	}
+
+	return nil
+}
+
+func (s *Session) Close(config string) error {
+	var configcstr *C.char = nil
+
+	if len(config) > 0 {
+		configcstr = C.CString(config)
+		defer C.free(unsafe.Pointer(configcstr))
+	}
+
+	if code := int(C.wiredtiger_session_close(s.wtsession, configcstr)); code != 0 {
 		return ErrorCode(code)
 	}
 
