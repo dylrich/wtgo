@@ -1,4 +1,4 @@
-module wtgo
+module github.com/dylrich/wtgo
 
 go 1.22.0
 

@@ -242,9 +242,9 @@ import (
 
 import (
 	"fmt"
+	"github.com/dylrich/wtgo/internal/wtformat"
 	"strconv"
 	"unsafe"
-	"wtgo/internal/wtformat"
 )
 
 type CursorComparison int8

@@ -3,8 +3,8 @@ package wtformat
 import (
 	"bytes"
 	"fmt"
+	"github.com/dylrich/wtgo/internal/wtformat/internal/wtintpack"
 	"strings"
-	"wtgo/internal/wtformat/internal/wtintpack"
 )
 
 type FieldPacker interface {

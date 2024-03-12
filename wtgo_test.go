@@ -3,9 +3,9 @@ package wtgo_test
 import (
 	"errors"
 	"fmt"
+	"github.com/dylrich/wtgo"
 	"os"
 	"testing"
-	"wtgo"
 
 	"github.com/google/go-cmp/cmp"
 )

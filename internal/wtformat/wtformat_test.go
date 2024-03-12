@@ -1,9 +1,9 @@
 package wtformat_test
 
 import (
+	"github.com/dylrich/wtgo/internal/wtformat"
 	"reflect"
 	"testing"
-	"wtgo/internal/wtformat"
 
 	"github.com/google/go-cmp/cmp"
 )
