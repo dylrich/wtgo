@@ -46,7 +46,7 @@ int wiredtiger_session_verify(WT_SESSION *session, const char *name, const char 
 	return session->verify(session, name, config);
 }
 
-int wiredtiger_transaction_pinned_range(WT_SESSION *session, uint64_t *range) {
+int wiredtiger_session_transaction_pinned_range(WT_SESSION *session, uint64_t *range) {
 	return session->transaction_pinned_range(session, range);
 }
 
@@ -606,7 +606,7 @@ func (s *Session) TransactionPinnedRange() (uint64, error) {
 	code := int(C.wiredtiger_session_transaction_pinned_range(s.wtsession, &rangec))
 
 	if code != 0 {
-		return ErrorCode(code)
+		return 0, ErrorCode(code)
 	}
 
 	return uint64(rangec), nil
