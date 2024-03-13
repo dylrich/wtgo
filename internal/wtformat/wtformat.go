@@ -28,16 +28,18 @@ func (p fieldPackerInt8) PackField(data any, buf []byte) ([]byte, error) {
 }
 
 func (p fieldPackerInt8) UnpackField(buf []byte, data any) ([]byte, error) {
-	v, ok := data.(*int8)
-	if ok == false {
-		return nil, fmt.Errorf("expected int8 pointer, got %T", data)
+	switch v := data.(type) {
+	case *int8:
+		buf, x := wtintpack.UnpackInt(buf)
+		*v = int8(x)
+		return buf, nil
+	case *any:
+		buf, x := wtintpack.UnpackInt(buf)
+		*v = int8(x)
+		return buf, nil
+	default:
+		return nil, fmt.Errorf("cannot unpack field into type %T", v)
 	}
-
-	buf, x := wtintpack.UnpackInt(buf)
-
-	*v = int8(x)
-
-	return buf, nil
 }
 
 type fieldPackerUint8 struct {
@@ -55,16 +57,18 @@ func (p fieldPackerUint8) PackField(data any, buf []byte) ([]byte, error) {
 }
 
 func (p fieldPackerUint8) UnpackField(buf []byte, data any) ([]byte, error) {
-	v, ok := data.(*uint8)
-	if ok == false {
-		return nil, fmt.Errorf("expected uint8 pointer, got %T", data)
+	switch v := data.(type) {
+	case *uint8:
+		buf, x := wtintpack.UnpackInt(buf)
+		*v = uint8(x)
+		return buf, nil
+	case *any:
+		buf, x := wtintpack.UnpackInt(buf)
+		*v = uint8(x)
+		return buf, nil
+	default:
+		return nil, fmt.Errorf("cannot unpack field into type %T", v)
 	}
-
-	buf, x := wtintpack.UnpackUint(buf)
-
-	*v = uint8(x)
-
-	return buf, nil
 }
 
 type fieldPackerInt16 struct {
@@ -82,16 +86,18 @@ func (p fieldPackerInt16) PackField(data any, buf []byte) ([]byte, error) {
 }
 
 func (p fieldPackerInt16) UnpackField(buf []byte, data any) ([]byte, error) {
-	v, ok := data.(*int16)
-	if ok == false {
-		return nil, fmt.Errorf("expected int16 pointer, got %T", data)
+	switch v := data.(type) {
+	case *int16:
+		buf, x := wtintpack.UnpackInt(buf)
+		*v = int16(x)
+		return buf, nil
+	case *any:
+		buf, x := wtintpack.UnpackInt(buf)
+		*v = int16(x)
+		return buf, nil
+	default:
+		return nil, fmt.Errorf("cannot unpack field into type %T", v)
 	}
-
-	buf, x := wtintpack.UnpackInt(buf)
-
-	*v = int16(x)
-
-	return buf, nil
 }
 
 type fieldPackerUint16 struct {
@@ -109,16 +115,18 @@ func (p fieldPackerUint16) PackField(data any, buf []byte) ([]byte, error) {
 }
 
 func (p fieldPackerUint16) UnpackField(buf []byte, data any) ([]byte, error) {
-	v, ok := data.(*uint16)
-	if ok == false {
-		return nil, fmt.Errorf("expected uint16 pointer, got %T", data)
+	switch v := data.(type) {
+	case *uint16:
+		buf, x := wtintpack.UnpackInt(buf)
+		*v = uint16(x)
+		return buf, nil
+	case *any:
+		buf, x := wtintpack.UnpackInt(buf)
+		*v = uint16(x)
+		return buf, nil
+	default:
+		return nil, fmt.Errorf("cannot unpack field into type %T", v)
 	}
-
-	buf, x := wtintpack.UnpackUint(buf)
-
-	*v = uint16(x)
-
-	return buf, nil
 }
 
 type fieldPackerInt32 struct {
@@ -136,16 +144,18 @@ func (p fieldPackerInt32) PackField(data any, buf []byte) ([]byte, error) {
 }
 
 func (p fieldPackerInt32) UnpackField(buf []byte, data any) ([]byte, error) {
-	v, ok := data.(*int32)
-	if ok == false {
-		return nil, fmt.Errorf("expected int32 pointer, got %T", data)
+	switch v := data.(type) {
+	case *int32:
+		buf, x := wtintpack.UnpackInt(buf)
+		*v = int32(x)
+		return buf, nil
+	case *any:
+		buf, x := wtintpack.UnpackInt(buf)
+		*v = int32(x)
+		return buf, nil
+	default:
+		return nil, fmt.Errorf("cannot unpack field into type %T", v)
 	}
-
-	buf, x := wtintpack.UnpackInt(buf)
-
-	*v = int32(x)
-
-	return buf, nil
 }
 
 type fieldPackerUint32 struct {
@@ -163,16 +173,18 @@ func (p fieldPackerUint32) PackField(data any, buf []byte) ([]byte, error) {
 }
 
 func (p fieldPackerUint32) UnpackField(buf []byte, data any) ([]byte, error) {
-	v, ok := data.(*uint32)
-	if ok == false {
-		return nil, fmt.Errorf("expected uint32 pointer, got %T", data)
+	switch v := data.(type) {
+	case *uint32:
+		buf, x := wtintpack.UnpackInt(buf)
+		*v = uint32(x)
+		return buf, nil
+	case *any:
+		buf, x := wtintpack.UnpackInt(buf)
+		*v = uint32(x)
+		return buf, nil
+	default:
+		return nil, fmt.Errorf("cannot unpack field into type %T", v)
 	}
-
-	buf, x := wtintpack.UnpackUint(buf)
-
-	*v = uint32(x)
-
-	return buf, nil
 }
 
 type fieldPackerInt64 struct {
@@ -190,16 +202,18 @@ func (p fieldPackerInt64) PackField(data any, buf []byte) ([]byte, error) {
 }
 
 func (p fieldPackerInt64) UnpackField(buf []byte, data any) ([]byte, error) {
-	v, ok := data.(*int64)
-	if ok == false {
-		return nil, fmt.Errorf("expected int64 pointer, got %T", data)
+	switch v := data.(type) {
+	case *int64:
+		buf, x := wtintpack.UnpackInt(buf)
+		*v = int64(x)
+		return buf, nil
+	case *any:
+		buf, x := wtintpack.UnpackInt(buf)
+		*v = int64(x)
+		return buf, nil
+	default:
+		return nil, fmt.Errorf("cannot unpack field into type %T", v)
 	}
-
-	buf, x := wtintpack.UnpackInt(buf)
-
-	*v = int64(x)
-
-	return buf, nil
 }
 
 type fieldPackerUint64 struct {
@@ -217,16 +231,18 @@ func (p fieldPackerUint64) PackField(data any, buf []byte) ([]byte, error) {
 }
 
 func (p fieldPackerUint64) UnpackField(buf []byte, data any) ([]byte, error) {
-	v, ok := data.(*uint64)
-	if ok == false {
-		return nil, fmt.Errorf("expected uint64 pointer, got %T", data)
+	switch v := data.(type) {
+	case *uint64:
+		buf, x := wtintpack.UnpackInt(buf)
+		*v = uint64(x)
+		return buf, nil
+	case *any:
+		buf, x := wtintpack.UnpackInt(buf)
+		*v = uint64(x)
+		return buf, nil
+	default:
+		return nil, fmt.Errorf("cannot unpack field into type %T", v)
 	}
-
-	buf, x := wtintpack.UnpackUint(buf)
-
-	*v = uint64(x)
-
-	return buf, nil
 }
 
 type fieldPackerFixedSizeString struct {
@@ -256,15 +272,18 @@ func (p fieldPackerFixedSizeString) PackField(data any, buf []byte) ([]byte, err
 	return buf, nil
 }
 func (p fieldPackerFixedSizeString) UnpackField(buf []byte, data any) ([]byte, error) {
-	v, ok := data.(*string)
-	if ok == false {
-		return nil, fmt.Errorf("expected string pointer, got %T", data)
+	switch v := data.(type) {
+	case *string:
+		*v = string(buf[:p.size])
+		buf = buf[p.size:]
+		return buf, nil
+	case *any:
+		*v = string(buf[:p.size])
+		buf = buf[p.size:]
+		return buf, nil
+	default:
+		return nil, fmt.Errorf("cannot unpack field into type %T", v)
 	}
-
-	*v = string(buf[:p.size])
-	buf = buf[p.size:]
-
-	return buf, nil
 }
 
 type fieldPackerNullTerminatedString struct {
@@ -272,13 +291,10 @@ type fieldPackerNullTerminatedString struct {
 }
 
 func (p fieldPackerNullTerminatedString) UnpackField(buf []byte, data any) ([]byte, error) {
-	v, ok := data.(*string)
-	if ok == false {
-		return nil, fmt.Errorf("expected string pointer, got %T", data)
-	}
+	var s string
 
 	if p.size > 0 {
-		*v = string(buf[:p.size])
+		s = string(buf[:p.size])
 		buf = buf[p.size:]
 		if len(buf) > 0 && buf[0] == 0 {
 			buf = buf[1:]
@@ -287,17 +303,26 @@ func (p fieldPackerNullTerminatedString) UnpackField(buf []byte, data any) ([]by
 		n := bytes.IndexByte(buf, 0)
 		switch {
 		case n == 0:
-			*v = ""
+			s = ""
 			buf = buf[1:]
 		case n > 0:
-			*v = string(buf[:n])
+			s = string(buf[:n])
 			buf = buf[n+1:]
 		default:
 			return nil, fmt.Errorf("malformed field")
 		}
 	}
 
-	return buf, nil
+	switch v := data.(type) {
+	case *string:
+		*v = s
+		return buf, nil
+	case *any:
+		*v = s
+		return buf, nil
+	default:
+		return nil, fmt.Errorf("cannot unpack field into type %T", v)
+	}
 }
 
 func (p fieldPackerNullTerminatedString) PackField(data any, buf []byte) ([]byte, error) {
