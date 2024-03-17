@@ -223,10 +223,12 @@ int wiredtiger_cursor_modify(WT_CURSOR *cursor, WT_MODIFY *entries, int nentries
 }
 
 int wiredtiger_cursor_search(WT_CURSOR *cursor, const void *packed_key, size_t key_size) {
-	WT_ITEM key;
-	key.data = packed_key;
-	key.size = key_size;
-	cursor->set_key(cursor, &key);
+	if (key_size != 0) {
+		WT_ITEM key;
+		key.data = packed_key;
+		key.size = key_size;
+		cursor->set_key(cursor, &key);
+	}
 
 	return cursor->search(cursor);
 }
@@ -997,8 +999,13 @@ func (c *Cursor) GetValue(values ...any) error {
 }
 
 func (c *Cursor) Search() error {
-	packedkey := unsafe.Pointer(&c.keybuf[0])
-	size := C.size_t(len(c.keybuf))
+	var packedkey unsafe.Pointer
+	var size C.size_t
+
+	if len(c.keybuf) > 0 {
+		packedkey = unsafe.Pointer(&c.keybuf[0])
+		size = C.size_t(len(c.keybuf))
+	}
 
 	if code := int(C.wiredtiger_cursor_search(c.wtcursor, packedkey, size)); code != 0 {
 		return ErrorCode(code)
