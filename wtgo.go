@@ -839,6 +839,14 @@ func (c *Cursor) Bound(config string) error {
 	return nil
 }
 
+func (c *Cursor) ValueCount() int {
+	return len(c.valuePackers)
+}
+
+func (c *Cursor) KeyCount() int {
+	return len(c.keyPackers)
+}
+
 func (c *Cursor) SetValue(values ...any) error {
 	buf := c.valuebuf
 
